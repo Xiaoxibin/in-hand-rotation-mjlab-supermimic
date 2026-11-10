@@ -52,6 +52,23 @@ MUJOCO_GL=egl uv run --frozen python scripts/render/render_yaw.py \
   --policy <checkpoint.pt> --task Mjlab-TJ-Right-HandCube-Rotate --out outputs/render/tj
 ```
 
+The TJ project's already-trained PPO checkpoint
+(`in-hand-rotation-mjlab-tj/ckpts/tj_right_model_31497.pt`) has the same 21-DoF
+observation/action layout and runs on this task.  It only needs the older RSL-RL
+key `std` renamed to `distribution.std_param`:
+
+```bash
+uv run --frozen python scripts/convert_legacy_checkpoint.py \
+  /home/ubuntu/Projects/in-hand-rotation-mjlab-tj/ckpts/tj_right_model_31497.pt \
+  ckpts/tj/ppo_tj_right_yaw.pt
+MUJOCO_GL=egl uv run --frozen python scripts/play.py Mjlab-TJ-Right-HandCube-Rotate \
+  --checkpoint-file ckpts/tj/ppo_tj_right_yaw.pt --num-envs 1 --video True \
+  --video-length 400 --viewer none
+```
+
+On this machine the converted checkpoint scores ~0.34 rad/s yaw and 0.21
+reward/s with no drops in the TJ cube-yaw task.
+
 Note: this task uses the shared six-term hand-cube reward (the same one the
 world-model adapter reproduces).  The TJ branch's additional reward shaping
 (`cumulative_yaw`, `thumb_duty_cycle`, etc.) is not ported yet; the shared reward
