@@ -24,6 +24,39 @@ In-hand manipulation with the [LEAP Hand](https://leaphand.com/) in [mjlab](http
 
 All tasks run on the measured LEAP servo (current-limited Dynamixel position control, gearbox friction, 0.15 rad driver lead clamp, real link masses) with its randomization, so they train and evaluate on the plant the policies were deployed on.
 
+## TJ hand (TJDH21R, 21 DoF, right)
+
+This branch also carries the TJ right hand ported from the TJ project: the MJCF
+(`src/in_hand_rotation_mjlab/robots/tj_hand/xmls/right.xml`), its 22 STL meshes,
+the 21-DoF constants/home pose, and the 3.1 cm grasp cache.  TJ's MJCF already
+contains its own position actuators (kp/kv/ctrlrange/forcerange), so the
+LEAP-specific gear-servo randomisation is disabled for this task; the cube,
+contact-friction and link-mass randomisation is kept.
+
+```bash
+# list the task
+uv run --frozen python scripts/list_envs.py --all | grep TJ
+
+# PPO
+MUJOCO_GL=egl uv run --frozen python scripts/train.py Mjlab-TJ-Right-HandCube-Rotate \
+  --env.scene.num-envs 4096 --agent.run-name tj
+
+# world model (same trainer, TJ adapter selected by --task)
+MUJOCO_GL=egl uv run --frozen python scripts/wm/train_yaw.py \
+  --task Mjlab-TJ-Right-HandCube-Rotate --out outputs/wm/tj --hours 2.5
+
+# evaluate / render
+MUJOCO_GL=egl uv run --frozen python scripts/eval/eval_yaw.py \
+  --policy <checkpoint.pt> --task Mjlab-TJ-Right-HandCube-Rotate --out outputs/eval/tj.json
+MUJOCO_GL=egl uv run --frozen python scripts/render/render_yaw.py \
+  --policy <checkpoint.pt> --task Mjlab-TJ-Right-HandCube-Rotate --out outputs/render/tj
+```
+
+Note: this task uses the shared six-term hand-cube reward (the same one the
+world-model adapter reproduces).  The TJ branch's additional reward shaping
+(`cumulative_yaw`, `thumb_duty_cycle`, etc.) is not ported yet; the shared reward
+is the starting point for world-model training.
+
 ## Results
 
 <p align="center"><img src="assets/curves.png" width="100%" alt="Learning curves: world model vs PPO on cube yaw and fingertip rotation"/></p>

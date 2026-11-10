@@ -50,6 +50,7 @@ def actor_obs(o):
 def main():
   ap = argparse.ArgumentParser()
   ap.add_argument("--out", required=True)
+  ap.add_argument("--task", default=TASK, help="hand_cube task id (LEAP yaw or Mjlab-TJ-Right-HandCube-Rotate)")
   ap.add_argument("--envs", type=int, default=4096)
   ap.add_argument("--replay", type=int, default=1000, help="steps per env kept")
   ap.add_argument("--hours", type=float, default=3.0, help="wall-clock budget")
@@ -90,7 +91,7 @@ def main():
   (out / "ckpt").mkdir(parents=True, exist_ok=True)
   (out / "args.json").write_text(json.dumps(vars(args), indent=1))
 
-  env_cfg = load_env_cfg(TASK, play=False)
+  env_cfg = load_env_cfg(args.task, play=False)
   env_cfg.scene.num_envs = args.envs
   env_cfg.seed = args.seed
   env_cfg.recorders = {"wm_terminal": RecorderTermCfg(func=R.TerminalRecorder)}
@@ -101,8 +102,11 @@ def main():
   rec.L = L
   nj, N, dt = L.nj, args.envs, env.step_dt
   robot = env.scene["robot"]
+  is_tj = "TJ" in args.task
   task = GearYaw(nj, robot.data.default_joint_pos[0, L.term.target_ids].clone(), L.base_p[0].clone(),
-                 L.base_q[0].clone(), dt)
+                 L.base_q[0].clone(), dt, negate_yaw_rate=not is_tj,
+                 torque_law="position" if is_tj else "gear",
+                 fall_z=0.05 if is_tj else 0.2)
   assert tuple(env.reward_manager._term_names) == REW_NAMES, env.reward_manager._term_names
   full, names = R.context_full(env)
   cidx, cnames = R.varying_columns(full, names)
@@ -119,17 +123,26 @@ def main():
     from in_hand_rotation_mjlab.utils.rl import prepare_agent_cfg
     from mjlab.tasks.registry import load_rl_cfg
 
-    runner = OnPolicyRunner(wenv, prepare_agent_cfg(load_rl_cfg(TASK)), device=dev)
+    runner = OnPolicyRunner(wenv, prepare_agent_cfg(load_rl_cfg(args.task)), device=dev)
     runner.load(args.collect_policy, map_location=dev)
     collect_policy = runner.get_inference_policy(device=dev)
 
   actor = Actor(task.obs_dim, nj).to(dev)
   from in_hand_rotation_mjlab.robots.leap_hand.gear_servo import LeapGearServoActuator
 
-  servo = next(a for a in robot.actuators if isinstance(a, LeapGearServoActuator))
-  assert list(servo._target_names) == list(L.term._target_names)
-  plant_now = lambda: torch.cat([servo.current_gain, servo.current_damping, servo.current_limit,  # noqa: E731
-                                 servo.torque_constant], -1).clone()
+  servo = next((a for a in robot.actuators if isinstance(a, LeapGearServoActuator)), None)
+  if servo is not None:
+    assert list(servo._target_names) == list(L.term._target_names)
+    plant_now = lambda: torch.cat([servo.current_gain, servo.current_damping, servo.current_limit,  # noqa: E731
+                                   servo.torque_constant], -1).clone()
+  else:
+    # XML position actuators (TJ): per-joint kp, kd and force limit from the compiled model.
+    def plant_now():
+      m = env.sim.model
+      kp = m.actuator_gainprm[:, :nj, 0].clone()
+      kd = -m.actuator_biasprm[:, :nj, 2].clone()
+      flim = m.actuator_forcerange[:, :nj, 0].abs().clone()
+      return torch.cat([kp, kd, flim, torch.zeros_like(kp)], -1)
   replay = Replay(args.replay, N, L.dim, nj, len(cidx), 2 * nj, task.info_dim, len(REW_NAMES), dev, d_plant=4 * nj)
 
   # --- collection state ---

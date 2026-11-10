@@ -104,11 +104,16 @@ class object_rotation_progress:
     target_yaw_rate: float = 0.20,
     position_threshold: float = 0.02,
     tilt_threshold: float = 0.35,
+    negate_yaw_rate: bool = True,
   ) -> torch.Tensor:
     del env, asset_cfg  # Bound once in __init__.
 
-    # Positive score for target clockwise rotation direction in this task.
-    yaw_rate = -self._asset.data.root_link_ang_vel_w[:, 2]
+    # Rotation direction convention matches the reward term:
+    # negate_yaw_rate=True (left hand): clockwise is positive.
+    # negate_yaw_rate=False (right hand): counter-clockwise is positive.
+    yaw_rate = self._asset.data.root_link_ang_vel_w[:, 2]
+    if negate_yaw_rate:
+      yaw_rate = -yaw_rate
     yaw_score = torch.clamp(yaw_rate / max(target_yaw_rate, 1e-6), min=0.0, max=1.0)
 
     pos_w = self._asset.data.root_link_pos_w

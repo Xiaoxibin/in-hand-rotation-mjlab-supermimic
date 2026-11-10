@@ -1,0 +1,262 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mujoco model="TJDH21R">
+  <compiler angle="radian" meshdir="./assets/"/>
+  <option timestep="0.002" integrator="implicitfast" cone="elliptic" impratio="100" gravity="0 0 -9.81"/>
+  <default>
+    <joint damping="0.02" armature="0.0005" frictionloss="0.002"/>
+    <geom contype="0" conaffinity="0"/>
+    <default class="collision">
+      <geom contype="1" conaffinity="1" friction="0.2" solimp="0.999 0.999 0.001 0.0001 1" solref="0.0001 1"/>
+    </default>
+    <default class="tip">
+      <geom contype="1" conaffinity="1" friction="0.5" solimp="0.999 0.999 0.001 0.0001 1" solref="0.0001 1"/>
+    </default>
+  </default>
+  <asset>
+    <mesh name="Palm_R" content_type="model/stl" file="Palm_R.STL"/>
+    <mesh name="DPT" content_type="model/stl" file="DPT.STL"/>
+    <mesh name="PPT" content_type="model/stl" file="PPT.STL"/>
+    <mesh name="MCT_CMC3_R" content_type="model/stl" file="MCT_CMC3_R.STL"/>
+    <mesh name="MCT_CMC2" content_type="model/stl" file="MCT_CMC2.STL"/>
+    <mesh name="MCT_CMC1_R" content_type="model/stl" file="MCT_CMC1_R.STL"/>
+    <mesh name="DPI" content_type="model/stl" file="DPI.STL"/>
+    <mesh name="MPI" content_type="model/stl" file="MPI.STL"/>
+    <mesh name="PPI" content_type="model/stl" file="PPI.STL"/>
+    <mesh name="MCI_R" content_type="model/stl" file="MCI_R.STL"/>
+    <mesh name="DPM" content_type="model/stl" file="DPM.STL"/>
+    <mesh name="MPM" content_type="model/stl" file="MPM.STL"/>
+    <mesh name="PPM" content_type="model/stl" file="PPM.STL"/>
+    <mesh name="MCM_R" content_type="model/stl" file="MCM_R.STL"/>
+    <mesh name="DPR" content_type="model/stl" file="DPR.STL"/>
+    <mesh name="MPR" content_type="model/stl" file="MPR.STL"/>
+    <mesh name="PPR" content_type="model/stl" file="PPR.STL"/>
+    <mesh name="MCR_R" content_type="model/stl" file="MCR_R.STL"/>
+    <mesh name="DPS" content_type="model/stl" file="DPS.STL"/>
+    <mesh name="MPS" content_type="model/stl" file="MPS.STL"/>
+    <mesh name="PPS" content_type="model/stl" file="PPS.STL"/>
+    <mesh name="MCS_R" content_type="model/stl" file="MCS_R.STL"/>
+  </asset>
+  <worldbody>
+    <body name="Palm_R">
+      <inertial pos="-0.02421345 0.01258190 0.00086889" quat="0.176776 0.176776 0.68278 0.68278" mass="0.22762654" diaginertia="2.02556e-04 1.42551e-04 1.28534e-04"/>
+      <geom name="Palm_R_visual" type="mesh" mesh="Palm_R" contype="0" conaffinity="0" group="1" rgba="0.5 0.5 0.5 1"/>
+      <geom name="Palm_R_collision" type="mesh" mesh="Palm_R" class="collision"/>
+
+      <body name="MCT_CMC1_R" pos="0.0225 -0.01 0.0345">
+        <inertial pos="-0.00200157 3.716e-05 0.0160346" quat="0.997981 -0.00593291 -0.0262382 -0.0575304" mass="0.233725" diaginertia="6.32568e-06 6.1183e-06 1.48602e-06"/>
+        <joint name="CMC1" pos="0 0 0" axis="0 0 1" range="-1.58 0.01"/>
+        <geom name="MCT_CMC1_R_visual" type="mesh" mesh="MCT_CMC1_R" contype="0" conaffinity="0" group="1" rgba="1 0.5 1 1"/>
+        <geom name="MCT_CMC1_R_collision" type="mesh" mesh="MCT_CMC1_R" class="collision"/>
+
+        <body name="MCT_CMC2" quat="0.707107 0.707107 0 0">
+          <inertial pos="0.00460513 -0.00097961 -1.752e-05" quat="0 0.718404 0 0.695626" mass="0.00557091" diaginertia="4.00322e-07 3.9e-07 8.96778e-08"/>
+          <joint name="CMC2" pos="0 0 0" axis="0 0 1" range="-0.01 0.72"/>
+          <geom name="MCT_CMC2_visual" type="mesh" mesh="MCT_CMC2" contype="0" conaffinity="0" group="1" rgba="1 0.5 0.5 1"/>
+          <geom name="MCT_CMC2_collision" type="mesh" mesh="MCT_CMC2" class="collision"/>
+
+          <body name="MCT_CMC3_R" pos="0.0087 0 0" quat="0.270598 -0.653281 0.270598 -0.653281">
+            <inertial pos="-0.0287107 0.00817958 -0.00050802" quat="-0.0850536 0.684452 0.125067 0.713197" mass="0.0580128" diaginertia="1.46466e-05 1.30249e-05 4.40853e-06"/>
+            <joint name="CMC3" pos="0 0 0" axis="0 0 1" range="-0.96 0.27"/>
+            <geom name="MCT_CMC3_R_visual" type="mesh" mesh="MCT_CMC3_R" contype="0" conaffinity="0" group="1" rgba="1 0.5 0.5 1"/>
+            <geom name="MCT_CMC3_R_collision" type="mesh" mesh="MCT_CMC3_R" class="collision"/>
+            <!-- <geom name="MCT_CMC3_R_collision" type="box" size="0.019 0.019 0.021" pos="0.017 0.032 0.091" class="collision"/> -->
+
+            <body name="PPT" pos="0 0 0.0499" quat="0.707107 0 -0.707107 0">
+              <inertial pos="0.0154919 -0.00028132 -4.051e-05" quat="-0.0347582 0.708871 0.0232091 0.704099" mass="0.0291012" diaginertia="2.90007e-06 2.85068e-06 1.25925e-06"/>
+              <joint name="MCPT" pos="0 0 0" axis="0 0 1" range="-1.52 0.25"/>
+              <geom name="PPT_visual" type="mesh" mesh="PPT" contype="0" conaffinity="0" group="1" rgba="0.5 0.5 1 1"/>
+              <geom name="PPT_collision" type="mesh" mesh="PPT" class="collision"/>
+
+              <body name="DPT" pos="0.0319 0 0">
+                <inertial pos="0.0131116 -4.932e-05 -6.541e-05" quat="0.480559 0.480559 0.518712 0.518712" mass="0.00977671" diaginertia="1.06459e-06 1.02e-06 2.75412e-07"/>
+                <joint name="DIPT" pos="0 0 0" axis="0 0 1" range="-1.68 0.01"/>
+                <geom name="DPT_visual" type="mesh" mesh="DPT" contype="0" conaffinity="0" group="1"/>
+                <geom name="tip_thumb_collision" type="mesh" mesh="DPT" class="tip"/>
+              </body>
+            </body>
+          </body>
+        </body>
+      </body>
+
+      <body name="MCI_R" pos="0.0345 0.0199 0.071" quat="0.5 -0.5 -0.5 -0.5">
+        <inertial pos="0.00678235 5.402e-05 -0.0138689" quat="0.635999 0.364627 0.44423 0.514988" mass="0.0305674" diaginertia="3.47197e-06 3.18504e-06 1.66299e-06"/>
+        <joint name="MCPI2" pos="0 0 0" axis="0 0 1" range="-0.44 0.44"/>
+        <geom name="MCI_R_visual" type="mesh" mesh="MCI_R" contype="0" conaffinity="0" group="1" rgba="1 0.5 0.5 1"/>
+        <geom name="MCI_R_collision" type="mesh" mesh="MCI_R" class="collision"/>
+
+        <body name="PPI" pos="0.0238 0 -0.0229" quat="0.707107 0.707107 0 0">
+          <inertial pos="0.0203188 0.00337991 -6.558e-05" quat="0.00203768 0.707104 -0.00203768 0.707104" mass="0.035184" diaginertia="5.43e-06 5.29012e-06 1.81988e-06"/>
+          <joint name="MCPI1" pos="0 0 0" axis="0 0 1" range="-1.58 0.35"/>
+          <geom name="PPI_visual" type="mesh" mesh="PPI" contype="0" conaffinity="0" group="1" rgba="0.5 1 0.5 1"/>
+          <geom name="PPI_collision" type="mesh" mesh="PPI" class="collision"/>
+
+          <body name="MPI" pos="0.0418 0 0">
+            <inertial pos="0.0150735 -0.00048655 -5.591e-05" quat="0.47002 0.47002 0.528282 0.528282" mass="0.0278029" diaginertia="2.70225e-06 2.66e-06 1.05775e-06"/>
+            <joint name="PIPI" pos="0 0 0" axis="0 0 1" range="-1.75 0.01"/>
+            <geom name="MPI_visual" type="mesh" mesh="MPI" contype="0" conaffinity="0" group="1" rgba="0.5 0.5 1 1"/>
+            <geom name="MPI_collision" type="mesh" mesh="MPI" class="collision"/>
+
+            <body name="DPI" pos="0.032 0 0">
+              <inertial pos="0.00955936 -0.00139063 -9.33e-05" quat="0.448633 0.448633 0.546561 0.546561" mass="0.00673439" diaginertia="4.61924e-07 4.2e-07 1.48076e-07"/>
+              <joint name="DIPI" pos="0 0 0" axis="0 0 1" range="-1.49 0.09"/>
+              <geom name="DPI_visual" type="mesh" mesh="DPI" contype="0" conaffinity="0" group="1"/>
+              <geom name="tip_index_collision" type="mesh" mesh="DPI" class="tip"/>
+            </body>
+          </body>
+        </body>
+      </body>
+
+      <body name="MCM_R" pos="0.0115 0.0172 0.074" quat="0.5 -0.5 -0.5 -0.5">
+        <inertial pos="0.00683307 -0.00010107 -0.0129298" quat="0.621498 0.391483 0.479264 0.480403" mass="0.0310154" diaginertia="3.56391e-06 3.32923e-06 1.67686e-06"/>
+        <joint name="MCPM2" pos="0 0 0" axis="0 0 1" range="-0.44 0.44"/>
+        <geom name="MCM_R_visual" type="mesh" mesh="MCM_R" contype="0" conaffinity="0" group="1" rgba="1 0.5 0.5 1"/>
+        <geom name="MCM_R_collision" type="mesh" mesh="MCM_R" class="collision"/>
+
+        <body name="PPM" pos="0.0244 0 -0.0202" quat="0.707107 0.707107 0 0">
+          <inertial pos="0.020331 0.00338078 -6.523e-05" quat="0.00203768 0.707104 -0.00203768 0.707104" mass="0.0351849" diaginertia="5.42e-06 5.29012e-06 1.81988e-06"/>
+          <joint name="MCPM1" pos="0 0 0" axis="0 0 1" range="-1.58 0.35"/>
+          <geom name="PPM_visual" type="mesh" mesh="PPM" contype="0" conaffinity="0" group="1" rgba="0.5 1 0.5 1"/>
+          <geom name="PPM_collision" type="mesh" mesh="PPM" class="collision"/>
+
+          <body name="MPM" pos="0.0418 0 0">
+            <inertial pos="0.0150735 -0.00048655 -5.591e-05" quat="0.47002 0.47002 0.528282 0.528282" mass="0.0278029" diaginertia="2.70225e-06 2.66e-06 1.05775e-06"/>
+            <joint name="PIPM" pos="0 0 0" axis="0 0 1" range="-1.75 0.01"/>
+            <geom name="MPM_visual" type="mesh" mesh="MPM" contype="0" conaffinity="0" group="1" rgba="0.5 0.5 1 1"/>
+            <geom name="MPM_collision" type="mesh" mesh="MPM" class="collision"/>
+
+            <body name="DPM" pos="0.032 0 0">
+              <inertial pos="0.0109112 -0.00152329 -8.713e-05" quat="0.458208 0.458208 0.538559 0.538559" mass="0.00734162" diaginertia="6.01359e-07 5.5e-07 1.58641e-07"/>
+              <joint name="DIPM" pos="0 0 0" axis="0 0 1" range="-1.49 0.09"/>
+              <geom name="DPM_visual" type="mesh" mesh="DPM" contype="0" conaffinity="0" group="1"/>
+              <geom name="tip_middle_collision" type="mesh" mesh="DPM" class="tip"/>
+            </body>
+          </body>
+        </body>
+      </body>
+
+      <body name="MCR_R" pos="-0.0115 0.0162 0.068" quat="0.5 -0.5 -0.5 -0.5">
+        <inertial pos="0.00716251 -0.00011252 -0.0134583" quat="0.571299 0.432751 0.524771 0.459304" mass="0.0319526" diaginertia="3.87116e-06 3.6097e-06 1.74914e-06"/>
+        <joint name="MCPR2" pos="0 0 0" axis="0 0 1" range="-0.44 0.27"/>
+        <geom name="MCR_R_visual" type="mesh" mesh="MCR_R" contype="0" conaffinity="0" group="1" rgba="1 0.5 0.5 1"/>
+        <geom name="MCR_R_collision" type="mesh" mesh="MCR_R" class="collision"/>
+
+        <body name="PPR" pos="0.0261 0 -0.0192" quat="0.707107 0.707107 0 0">
+          <inertial pos="0.02026 0.00338604 -6.504e-05" quat="0.0010044 0.707106 -0.0010044 0.707106" mass="0.035279" diaginertia="5.49e-06 5.35003e-06 1.82997e-06"/>
+          <joint name="MCPR1" pos="0 0 0" axis="0 0 1" range="-1.58 0.35"/>
+          <geom name="PPR_visual" type="mesh" mesh="PPR" contype="0" conaffinity="0" group="1" rgba="0.5 1 0.5 1"/>
+          <geom name="PPR_collision" type="mesh" mesh="PPR" class="collision"/>
+
+          <body name="MPR" pos="0.0418 0 0">
+            <inertial pos="0.0150735 -0.00048655 -5.591e-05" quat="0.47002 0.47002 0.528282 0.528282" mass="0.0278029" diaginertia="2.70225e-06 2.66e-06 1.05775e-06"/>
+            <joint name="PIPR" pos="0 0 0" axis="0 0 1" range="-1.75 0.01"/>
+            <geom name="MPR_visual" type="mesh" mesh="MPR" contype="0" conaffinity="0" group="1" rgba="0.5 0.5 1 1"/>
+            <geom name="MPR_collision" type="mesh" mesh="MPR" class="collision"/>
+
+            <body name="DPR" pos="0.032 0 0">
+              <inertial pos="0.00953024 -0.00144109 -9.33e-05" quat="0.450248 0.450248 0.545231 0.545231" mass="0.00673439" diaginertia="4.71555e-07 4.2e-07 1.48445e-07"/>
+              <joint name="DIPR" pos="0 0 0" axis="0 0 1" range="-1.49 0.09"/>
+              <geom name="DPR_visual" type="mesh" mesh="DPR" contype="0" conaffinity="0" group="1"/>
+              <geom name="tip_ring_collision" type="mesh" mesh="DPR" class="tip"/>
+            </body>
+          </body>
+        </body>
+      </body>
+
+      <body name="MCS_R" pos="-0.0345 0.0162 0.064" quat="0.5 -0.5 -0.5 -0.5">
+        <inertial pos="0.00686482 3.541e-05 -0.0133204" quat="0.515697 0.474979 0.476607 0.530375" mass="0.0313506" diaginertia="3.59051e-06 3.38515e-06 1.68434e-06"/>
+        <joint name="MCPS2" pos="0 0 0" axis="0 0 1" range="-0.44 0.27"/>
+        <geom name="MCS_R_visual" type="mesh" mesh="MCS_R" contype="0" conaffinity="0" group="1" rgba="1 0.5 0.5 1"/>
+        <geom name="MCS_R_collision" type="mesh" mesh="MCS_R" class="collision"/>
+
+        <body name="PPS" pos="0.0261 0 -0.0192" quat="0.707107 0.707107 0 0">
+          <inertial pos="0.015691 0.00268405 -6.533e-05" quat="0.491986 0.491986 0.507887 0.507887" mass="0.0283753" diaginertia="2.82159e-06 2.81e-06 1.24841e-06"/>
+          <joint name="MCPS1" pos="0 0 0" axis="0 0 1" range="-1.58 0.35"/>
+          <geom name="PPS_visual" type="mesh" mesh="PPS" contype="0" conaffinity="0" group="1" rgba="0.5 1 0.5 1"/>
+          <geom name="PPS_collision" type="mesh" mesh="PPS" class="collision"/>
+
+          <body name="MPS" pos="0.0305 0 0">
+            <inertial pos="0.0180596 -0.00035665 -1.538e-05" quat="0.473233 0.481768 0.511314 0.531514" mass="0.0268965" diaginertia="2.62236e-06 2.56021e-06 1.01743e-06"/>
+            <joint name="PIPS" pos="0 0 0" axis="0 0 1" range="-1.75 0.01"/>
+            <geom name="MPS_visual" type="mesh" mesh="MPS" contype="0" conaffinity="0" group="1" rgba="0.5 0.5 1 1"/>
+            <geom name="MPS_collision" type="mesh" mesh="MPS" class="collision"/>
+
+            <body name="DPS" pos="0.0348 0 0">
+              <inertial pos="0.00691578 -0.00044687 -0.00014623" quat="0.450248 0.450248 0.545231 0.545231" mass="0.00490936" diaginertia="2.65777e-07 2.3e-07 1.04223e-07"/>
+              <joint name="DIPS" pos="0 0 0" axis="0 0 1" range="-1.49 0.09"/>
+              <geom name="DPS_visual" type="mesh" mesh="DPS" contype="0" conaffinity="0" group="1"/>
+              <geom name="tip_pinky_collision" type="mesh" mesh="DPS" class="tip"/>
+            </body>
+          </body>
+        </body>
+      </body>
+    </body>
+  </worldbody>
+
+  <contact>
+    <exclude body1="MCT_CMC1_R" body2="MCT_CMC2"/>
+    <exclude body1="MCT_CMC2" body2="MCT_CMC3_R"/>
+    <exclude body1="MCT_CMC3_R" body2="PPT"/>
+    <exclude body1="PPT" body2="DPT"/>
+    <exclude body1="MCI_R" body2="PPI"/>
+    <exclude body1="PPI" body2="MPI"/>
+    <exclude body1="MPI" body2="DPI"/>
+    <exclude body1="MCM_R" body2="PPM"/>
+    <exclude body1="PPM" body2="MPM"/>
+    <exclude body1="MPM" body2="DPM"/>
+    <exclude body1="MCR_R" body2="PPR"/>
+    <exclude body1="PPR" body2="MPR"/>
+    <exclude body1="MPR" body2="DPR"/>
+    <exclude body1="MCS_R" body2="PPS"/>
+    <exclude body1="PPS" body2="MPS"/>
+    <exclude body1="MPS" body2="DPS"/>
+
+    <exclude body1="MCT_CMC1_R" body2="MCI_R"/>
+    <exclude body1="MCT_CMC1_R" body2="MCM_R"/>
+    <exclude body1="MCT_CMC1_R" body2="MCR_R"/>
+    <exclude body1="MCT_CMC1_R" body2="MCS_R"/>
+    <exclude body1="MCI_R" body2="MCM_R"/>
+    <exclude body1="MCI_R" body2="MCR_R"/>
+    <exclude body1="MCI_R" body2="MCS_R"/>
+    <exclude body1="MCM_R" body2="MCR_R"/>
+    <exclude body1="MCM_R" body2="MCS_R"/>
+    <exclude body1="MCR_R" body2="MCS_R"/>
+
+    <exclude body1="Palm_R" body2="MCT_CMC1_R"/>
+    <exclude body1="Palm_R" body2="MCT_CMC2"/>
+    <exclude body1="Palm_R" body2="MCT_CMC3_R"/>
+    <exclude body1="Palm_R" body2="MCI_R"/>
+    <exclude body1="Palm_R" body2="MCM_R"/>
+    <exclude body1="Palm_R" body2="MCR_R"/>
+    <exclude body1="Palm_R" body2="MCS_R"/>
+
+    <exclude body1="Palm_R" body2="PPT"/>
+    <exclude body1="Palm_R" body2="PPI"/>
+    <exclude body1="Palm_R" body2="PPM"/>
+    <exclude body1="Palm_R" body2="PPR"/>
+    <exclude body1="Palm_R" body2="PPS"/>
+  </contact>
+
+  <actuator>
+    <position name="CMC1_act" joint="CMC1" kp="0.8" kv="0.018" ctrlrange="-1.5800 0.0100" forcerange="-1.0 1.0"/>
+    <position name="CMC2_act" joint="CMC2" kp="0.8" kv="0.018" ctrlrange="-0.0100 0.7200" forcerange="-1.0 1.0"/>
+    <position name="CMC3_act" joint="CMC3" kp="0.8" kv="0.018" ctrlrange="-0.9600 0.2700" forcerange="-1.0 1.0"/>
+    <position name="MCPT_act" joint="MCPT" kp="1" kv="0.020" ctrlrange="-1.5200 0.2500" forcerange="-1.0 1.0"/>
+    <position name="DIPT_act" joint="DIPT" kp="1" kv="0.020" ctrlrange="-1.6800 0.0100" forcerange="-1.0 1.0"/>
+    <position name="MCPI2_act" joint="MCPI2" kp="0.5" kv="0.014" ctrlrange="-0.4400 0.4400" forcerange="-1.0 1.0"/>
+    <position name="MCPI1_act" joint="MCPI1" kp="1" kv="0.02" ctrlrange="-1.5800 0.3500" forcerange="-1.0 1.0"/>
+    <position name="PIPI_act" joint="PIPI" kp="1" kv="0.02" ctrlrange="-1.7500 0.0100" forcerange="-1.0 1.0"/>
+    <position name="DIPI_act" joint="DIPI" kp="1" kv="0.02" ctrlrange="-1.4900 0.0900" forcerange="-1.0 1.0"/>
+    <position name="MCPM2_act" joint="MCPM2" kp="0.5" kv="0.014" ctrlrange="-0.4400 0.4400" forcerange="-1.0 1.0"/>
+    <position name="MCPM1_act" joint="MCPM1" kp="1" kv="0.02" ctrlrange="-1.5800 0.3500" forcerange="-1.0 1.0"/>
+    <position name="PIPM_act" joint="PIPM" kp="1" kv="0.02" ctrlrange="-1.7500 0.0100" forcerange="-1.0 1.0"/>
+    <position name="DIPM_act" joint="DIPM" kp="1" kv="0.02" ctrlrange="-1.4900 0.0900" forcerange="-1.0 1.0"/>
+    <position name="MCPR2_act" joint="MCPR2" kp="0.5" kv="0.014" ctrlrange="-0.4400 0.2700" forcerange="-1.0 1.0"/>
+    <position name="MCPR1_act" joint="MCPR1" kp="1" kv="0.02" ctrlrange="-1.5800 0.3500" forcerange="-1.0 1.0"/>
+    <position name="PIPR_act" joint="PIPR" kp="1" kv="0.02" ctrlrange="-1.7500 0.0100" forcerange="-1.0 1.0"/>
+    <position name="DIPR_act" joint="DIPR" kp="1" kv="0.02" ctrlrange="-1.4900 0.0900" forcerange="-1.0 1.0"/>
+    <position name="MCPS2_act" joint="MCPS2" kp="0.5" kv="0.014" ctrlrange="-0.4400 0.2700" forcerange="-1.0 1.0"/>
+    <position name="MCPS1_act" joint="MCPS1" kp="1" kv="0.02" ctrlrange="-1.5800 0.3500" forcerange="-1.0 1.0"/>
+    <position name="PIPS_act" joint="PIPS" kp="1" kv="0.02" ctrlrange="-1.7500 0.0100" forcerange="-1.0 1.0"/>
+    <position name="DIPS_act" joint="DIPS" kp="1" kv="0.02" ctrlrange="-1.4900 0.0900" forcerange="-1.0 1.0"/>
+  </actuator>
+</mujoco>

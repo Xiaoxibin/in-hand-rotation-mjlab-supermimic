@@ -34,12 +34,25 @@ OBS_NOISE = 0.01
 
 
 class GearYaw:
-  def __init__(self, nj: int, q_default: torch.Tensor, base_p: torch.Tensor, base_q: torch.Tensor, dt: float):
+  def __init__(
+    self,
+    nj: int,
+    q_default: torch.Tensor,
+    base_p: torch.Tensor,
+    base_q: torch.Tensor,
+    dt: float,
+    negate_yaw_rate: bool = True,
+    torque_law: str = "gear",
+    fall_z: float = FALL_Z,
+  ):
     self.nj = nj
     self.S = state_slices(nj)
     self.q_default = q_default
     self.base_p, self.base_q = base_p, base_q
     self.dt = dt
+    self.negate_yaw_rate = bool(negate_yaw_rate)
+    self.torque_law = str(torque_law)
+    self.fall_z = float(fall_z)
     self.obs_dim = H_OBS * 2 * nj
     self.info_dim = nj + 3 + 2  # q_reset, anchor position (world), anchor roll / pitch
 
@@ -76,8 +89,13 @@ class GearYaw:
 
   def servo_torque(self, s2, cmd, plant):
     S, nj = self.S, self.nj
-    G, Gd, Imax, Kt = plant[:, :nj], plant[:, nj:2 * nj], plant[:, 2 * nj:3 * nj], plant[:, 3 * nj:]
     q, qd = s2[..., S["q"]], s2[..., S["qd"]]
+    if self.torque_law == "position":
+      # XML position actuator: tau = clip(kp * (cmd - q) - kd * qd, +-force_limit).
+      kp, kd, flim = plant[:, :nj], plant[:, nj:2 * nj], plant[:, 2 * nj:3 * nj]
+      tau = kp * (cmd - q) - kd * qd
+      return torch.maximum(torch.minimum(tau, flim), -flim)
+    G, Gd, Imax, Kt = plant[:, :nj], plant[:, nj:2 * nj], plant[:, 2 * nj:3 * nj], plant[:, 3 * nj:]
     lead = (cmd - q).clamp(-LEAD_CLAMP, LEAD_CLAMP)
     cur = torch.maximum(torch.minimum(G * lead - Gd * qd, Imax), -Imax)
     return Kt * cur
@@ -93,7 +111,7 @@ class GearYaw:
     S, nj = self.S, self.nj
     d = self.dyaw(s, s2)
     win = torch.cat([dyaw_prev3, d[:, None]], -1)
-    rate = -win.mean(-1) / self.dt
+    rate = (-win.mean(-1) if self.negate_yaw_rate else win.mean(-1)) / self.dt
     roll, pitch, _ = self.rpy(s2)
     pos_err = (self.world_pos(s2) - info[:, nj:nj + 3]).norm(dim=-1)
     tilt = torch.stack([wrap_to_pi(roll - info[:, nj + 3]).abs(), wrap_to_pi(pitch - info[:, nj + 4]).abs()], -1).norm(dim=-1)
@@ -106,7 +124,7 @@ class GearYaw:
       object_linvel_penalty=W_LIN * v_w.abs().sum(-1),
       pose_diff_penalty=W_POSE * over.clamp_min(0).pow(2).sum(-1),
       torque_work=aux_rate,
-      object_fallen=W_FALL * (self.world_pos(s2)[:, 2] < FALL_Z).float(),
+      object_fallen=W_FALL * (self.world_pos(s2)[:, 2] < self.fall_z).float(),
     )
     return terms, win[:, 1:]
 

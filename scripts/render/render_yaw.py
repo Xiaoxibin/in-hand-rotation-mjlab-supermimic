@@ -38,15 +38,16 @@ def main():
   ap.add_argument("--size", type=int, default=320)
   ap.add_argument("--seed", type=int, default=7)
   ap.add_argument("--device", default="cuda:0")
+  ap.add_argument("--task", default=_ev.TASK)
   ap.add_argument("--out", required=True)
   args = ap.parse_args()
   dev = args.device
-  cfg = load_env_cfg(_ev.TASK, play=True)
+  cfg = load_env_cfg(args.task, play=True)
   cfg.scene.num_envs = args.envs
   cfg.seed = args.seed
   cfg.episode_length_s = args.seconds + 5
   env = ManagerBasedRlEnv(cfg=cfg, device=dev)
-  agent_cfg = load_rl_cfg(_ev.TASK)
+  agent_cfg = load_rl_cfg(args.task)
   wenv = RslRlVecEnvWrapper(env, clip_actions=agent_cfg.clip_actions)
   from rsl_rl.runners import OnPolicyRunner
 

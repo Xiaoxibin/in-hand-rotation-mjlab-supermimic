@@ -348,7 +348,7 @@ def main():
   # Import tasks to populate the registry.
   import in_hand_rotation_mjlab.tasks  # noqa: F401
 
-  all_tasks = [t for t in list_tasks() if t.startswith("Mjlab-Leap")]
+  all_tasks = [t for t in list_tasks() if t.startswith(("Mjlab-Leap", "Mjlab-TJ"))]
   chosen_task, remaining_args = tyro.cli(
     tyro.extras.literal_type_from_choices(all_tasks),
     add_help=False,

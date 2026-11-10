@@ -49,9 +49,13 @@ def main():
   ap.add_argument("--seconds", type=float, default=60.0)
   ap.add_argument("--seed", type=int, default=123)
   ap.add_argument("--device", default="cuda:0")
+  ap.add_argument("--negate-yaw-rate", type=int, default=None,
+                  help="1: clockwise positive (LEAP left); 0: counter-clockwise positive (TJ right). "
+                       "Default: auto from the task id.")
   ap.add_argument("--out", required=True)
   args = ap.parse_args()
   dev = args.device
+  negate_yaw = args.negate_yaw_rate if args.negate_yaw_rate is not None else int("TJ" not in args.task)
   env_cfg = load_env_cfg(args.task, play=True)
   env_cfg.scene.num_envs = args.envs
   env_cfg.seed = args.seed
@@ -77,7 +81,9 @@ def main():
       a = policy(obs)
       obs, r, d, _ = wenv.step(a)
       yaw = euler_xyz_from_quat(cube.data.root_link_quat_w)[2]
-      dyaw = -wrap_to_pi(yaw - prev_yaw)  # left hand: clockwise positive (negate_yaw_rate)
+      dyaw = wrap_to_pi(yaw - prev_yaw)
+      if negate_yaw:
+        dyaw = -dyaw  # LEAP left hand: clockwise positive
       d = d.bool()
       term = env.reset_terminated.bool() & d
       drops += term.float()

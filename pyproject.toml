@@ -41,7 +41,7 @@ package-dir = {"" = "src"}
 where = ["src"]
 
 [tool.setuptools.package-data]
-"*" = ["*.xml", "*.obj", "*.stl", "*.png", "*.npz", "*.md", "LICENSE"]
+"*" = ["*.xml", "*.obj", "*.stl", "*.STL", "*.png", "*.npz", "*.md", "LICENSE"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

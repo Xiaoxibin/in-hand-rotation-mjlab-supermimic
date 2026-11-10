@@ -39,11 +39,23 @@ def test_env_cfgs_build(registry, task):
   assert registry.load_rl_cfg(task).experiment_name
 
 
+def test_tj_task_builds(registry):
+  task = "Mjlab-TJ-Right-HandCube-Rotate"
+  assert task in registry.list_tasks()
+  for play in (False, True):
+    cfg = registry.load_env_cfg(task, play=play)
+    assert cfg.scene.num_envs > 0
+    assert cfg.scene.entities["robot"].init_state.joint_pos
+  assert registry.load_rl_cfg(task).experiment_name == "tj_right_hand_cube_rotate"
+
+
 def test_package_data():
   pkg = ROOT / "src/in_hand_rotation_mjlab"
   assert (pkg / "tasks/fingertip_rotate/data/palmdown_canon4.npz").is_file()
   for c in "567":
     assert (pkg / f"tasks/hand_cube/cache/leap_left_custom_grasp_cache_cube{c}cm.npz").is_file()
+  assert (pkg / "tasks/hand_cube/cache/tj_right_grasp_cache_31_filtered.npz").is_file()
+  assert (pkg / "robots/tj_hand/xmls/right.xml").is_file()
 
 
 @pytest.mark.parametrize("path", sorted(str(p.relative_to(ROOT)) for p in (ROOT / "ckpts").rglob("*.pt")
