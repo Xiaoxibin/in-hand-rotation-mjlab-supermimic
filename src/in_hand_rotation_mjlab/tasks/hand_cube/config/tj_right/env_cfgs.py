@@ -16,6 +16,8 @@ from in_hand_rotation_mjlab.tasks.hand_cube.hand_cube_env_cfg import (
 )
 from mjlab.envs import ManagerBasedRlEnvCfg
 
+from .tuning import TJ_TUNED_REWARD
+
 CUBE_SPAWN_POS = (-0.006, 0.032, 0.08)
 GRASP_CACHE_FILE = "tasks/hand_cube/cache/tj_right_grasp_cache_31_filtered.npz"
 CUBE_HALF_SIZE = 0.031
@@ -74,4 +76,38 @@ def tj_right_hand_cube_rotate_env_cfg(play: bool = False) -> ManagerBasedRlEnvCf
 
     # The curriculum metric must use the same yaw sign as the reward.
     cfg.metrics["rotation_progress"].params["negate_yaw_rate"] = False
+    return cfg
+
+
+_ROTATE_KEYS = (
+    "clip_min",
+    "clip_max",
+    "low_rate_boost",
+    "negative_yaw_rate_penalty",
+    "tumble_penalty_weight",
+    "tumble_dead_zone",
+    "drift_mode",
+    "drift_decay_k_pos",
+    "drift_decay_k_tilt",
+    "drift_tilt_threshold",
+    "drift_gate_positive_only",
+)
+
+
+def tj_right_hand_cube_rotate_env_cfg_tuned(play: bool = False) -> ManagerBasedRlEnvCfg:
+    """TJ cube yaw with the state-only part of the TJ reward tuning.
+
+    The TJ branch's ``cumulative_yaw`` and ``thumb_duty_cycle`` terms need
+    episode-level history / contact readings and are not included here; they
+    are also not yet reproducible by the world-model adapter.
+    """
+    cfg = tj_right_hand_cube_rotate_env_cfg(play=play)
+    rotate = cfg.rewards["rotate_finite_diff"].params
+    rotate.update({key: TJ_TUNED_REWARD[key] for key in _ROTATE_KEYS})
+    cfg.rewards["torque_penalty"].params.update(
+        max_abs_torque=TJ_TUNED_REWARD["max_abs_torque"], normalize=True
+    )
+    cfg.rewards["work_penalty"].params.update(
+        max_abs_power=TJ_TUNED_REWARD["max_abs_power"]
+    )
     return cfg

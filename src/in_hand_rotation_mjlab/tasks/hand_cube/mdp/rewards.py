@@ -81,6 +81,7 @@ class object_yaw_finite_diff_clipped:
     self._init_roll = torch.zeros(env.num_envs, device=env.device)
     self._init_pitch = torch.zeros(env.num_envs, device=env.device)
     self._has_init = torch.zeros(env.num_envs, device=env.device, dtype=torch.bool)
+    self._curriculum_calls: int = 0
     self._env = env
     self.reset(None)
 
@@ -113,6 +114,10 @@ class object_yaw_finite_diff_clipped:
     history_steps: int | None = None,
     negate_yaw_rate: bool = True,
     absolute_yaw_rate: bool = False,
+    low_rate_boost: float = 1.0,
+    negative_yaw_rate_penalty: float = 1.0,
+    tumble_penalty_weight: float = 0.0,
+    tumble_dead_zone: float = 0.0,
     drift_position_threshold: float = 0.02,
     drift_tilt_threshold: float = 0.35,
     drift_inside_factor: float = 1.0,
@@ -121,6 +126,13 @@ class object_yaw_finite_diff_clipped:
     drift_decay_k_pos: float = 30.0,
     drift_decay_k_tilt: float = 3.0,
     drift_min_factor: float = 0.1,
+    drift_gate_positive_only: bool = False,
+    target_rate: float = 0.0,
+    target_rate_start: float | None = None,
+    target_rate_end: float | None = None,
+    target_rate_iters: int = 0,
+    slow_penalty: float = 0.0,
+    slow_penalty_deadband: float = 0.8,
   ) -> torch.Tensor:
     del object_name  # Bound in __init__ for consistency across calls.
     if history_steps is not None and history_steps != self.history_steps:
@@ -155,7 +167,35 @@ class object_yaw_finite_diff_clipped:
       yaw_rate = -yaw_rate
     if absolute_yaw_rate:
       yaw_rate = yaw_rate.abs()
-    yaw_reward = torch.clamp(yaw_rate, min=clip_min, max=clip_max)
+
+    # Asymmetric penalty and slow-rate boost (TJ tuning; defaults preserve the
+    # original symmetric clip).
+    if low_rate_boost != 1.0:
+      boosted = torch.clamp(yaw_rate * low_rate_boost, min=0.0, max=clip_max)
+      yaw_reward = torch.where(
+        yaw_rate >= 0.0, boosted, torch.clamp(yaw_rate, min=clip_min, max=0.0)
+      )
+    else:
+      yaw_reward = torch.clamp(yaw_rate, min=clip_min, max=clip_max)
+    if negative_yaw_rate_penalty != 1.0:
+      yaw_reward = torch.where(
+        yaw_reward < 0.0, yaw_reward * negative_yaw_rate_penalty, yaw_reward
+      )
+
+    # Optional slow-target shaping (default off).
+    target = target_rate
+    if (
+      target_rate_start is not None
+      and target_rate_end is not None
+      and target_rate_iters > 0
+    ):
+      self._curriculum_calls += 1
+      frac = min(1.0, self._curriculum_calls / float(target_rate_iters))
+      target = target_rate_start + (target_rate_end - target_rate_start) * frac
+    if slow_penalty > 0.0 and target > 0.0:
+      floor = target * slow_penalty_deadband
+      shortfall = torch.clamp(floor - yaw_rate, min=0.0)
+      yaw_reward = yaw_reward - slow_penalty * shortfall
 
     cube: Entity = self._env.scene[self.object_name]
     roll, pitch, _ = euler_xyz_from_quat(cube.data.root_link_quat_w)
@@ -167,6 +207,18 @@ class object_yaw_finite_diff_clipped:
     tilt_error = torch.linalg.vector_norm(
       torch.stack([roll_error, pitch_error], dim=-1), dim=-1
     )
+
+    # Tumble penalty: angular velocity not aligned with the cube's own z axis.
+    if tumble_penalty_weight > 0.0:
+      cube_ang_vel_w = cube.data.root_link_ang_vel_w
+      cube_quat_w = cube.data.root_link_quat_w
+      z_axis = torch.zeros_like(cube_ang_vel_w)
+      z_axis[:, 2] = 1.0
+      cube_z_axis_w = quat_apply(cube_quat_w, z_axis)
+      spin_rate = (cube_ang_vel_w * cube_z_axis_w).sum(dim=-1, keepdim=True)
+      tumble_rate = cube_ang_vel_w - spin_rate * cube_z_axis_w
+      tumble_mag = torch.norm(tumble_rate, dim=-1) - tumble_dead_zone
+      yaw_reward = yaw_reward - tumble_penalty_weight * torch.clamp(tumble_mag, min=0.0)
 
     if drift_mode == "step":
       in_bounds = (pos_error <= drift_position_threshold) & (
@@ -192,6 +244,10 @@ class object_yaw_finite_diff_clipped:
     drift_factor = torch.where(
       self._has_init, drift_factor, torch.ones_like(drift_factor)
     )
+    if drift_gate_positive_only:
+      drift_factor = torch.where(
+        yaw_reward >= 0.0, drift_factor, torch.ones_like(drift_factor)
+      )
     return yaw_reward * drift_factor
 
 

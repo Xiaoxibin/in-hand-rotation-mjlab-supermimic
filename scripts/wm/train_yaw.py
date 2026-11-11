@@ -103,10 +103,30 @@ def main():
   nj, N, dt = L.nj, args.envs, env.step_dt
   robot = env.scene["robot"]
   is_tj = "TJ" in args.task
+  is_tuned = "Tuned" in args.task
+  reward_kwargs = {}
+  if is_tuned:
+    from in_hand_rotation_mjlab.tasks.hand_cube.config.tj_right.tuning import TJ_TUNED_REWARD
+    reward_kwargs = dict(
+      clip_min=TJ_TUNED_REWARD["clip_min"],
+      clip_max=TJ_TUNED_REWARD["clip_max"],
+      low_rate_boost=TJ_TUNED_REWARD["low_rate_boost"],
+      negative_yaw_rate_penalty=TJ_TUNED_REWARD["negative_yaw_rate_penalty"],
+      tumble_penalty_weight=TJ_TUNED_REWARD["tumble_penalty_weight"],
+      tumble_dead_zone=TJ_TUNED_REWARD["tumble_dead_zone"],
+      drift_mode=TJ_TUNED_REWARD["drift_mode"],
+      drift_decay_k_pos=TJ_TUNED_REWARD["drift_decay_k_pos"],
+      drift_decay_k_tilt=TJ_TUNED_REWARD["drift_decay_k_tilt"],
+      drift_tilt_threshold=TJ_TUNED_REWARD["drift_tilt_threshold"],
+      drift_gate_positive_only=TJ_TUNED_REWARD["drift_gate_positive_only"],
+      max_abs_torque=TJ_TUNED_REWARD["max_abs_torque"],
+      normalize_torque=True,
+      max_abs_power=TJ_TUNED_REWARD["max_abs_power"],
+    )
   task = GearYaw(nj, robot.data.default_joint_pos[0, L.term.target_ids].clone(), L.base_p[0].clone(),
                  L.base_q[0].clone(), dt, negate_yaw_rate=not is_tj,
                  torque_law="position" if is_tj else "gear",
-                 fall_z=0.05 if is_tj else 0.2)
+                 fall_z=0.05 if is_tj else 0.2, **reward_kwargs)
   assert tuple(env.reward_manager._term_names) == REW_NAMES, env.reward_manager._term_names
   full, names = R.context_full(env)
   cidx, cnames = R.varying_columns(full, names)
@@ -222,7 +242,7 @@ def main():
   opt_wm = torch.optim.Adam(list(wm.parameters()) + list(aux.parameters()), lr=args.lr)
   opt_pi = torch.optim.Adam(actor.parameters(), lr=args.lr, betas=(0.9, 0.95))
   opt_v = torch.optim.Adam(critic.parameters(), lr=args.lr)
-  r_max = 0.4 * dt  # most the reward can pay per step (rotation 1.25 x 0.25 /s), for the value-target clamp
+  r_max = (1.25 if is_tuned else 0.4) * dt  # most the reward can pay per step, for the value-target clamp
 
   noise = args.warmup_noise
   for _ in range(args.warmup):

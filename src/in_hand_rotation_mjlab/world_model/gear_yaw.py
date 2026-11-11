@@ -44,6 +44,23 @@ class GearYaw:
     negate_yaw_rate: bool = True,
     torque_law: str = "gear",
     fall_z: float = FALL_Z,
+    clip_min: float = -YAW_CLIP,
+    clip_max: float = YAW_CLIP,
+    low_rate_boost: float = 1.0,
+    negative_yaw_rate_penalty: float = 1.0,
+    tumble_penalty_weight: float = 0.0,
+    tumble_dead_zone: float = 0.0,
+    drift_position_threshold: float = DRIFT_POS,
+    drift_tilt_threshold: float = DRIFT_TILT,
+    drift_outside_factor: float = DRIFT_OUT,
+    drift_mode: str = "step",
+    drift_decay_k_pos: float = 30.0,
+    drift_decay_k_tilt: float = 3.0,
+    drift_min_factor: float = 0.1,
+    drift_gate_positive_only: bool = False,
+    max_abs_torque: float | None = None,
+    normalize_torque: bool = False,
+    max_abs_power: float | None = None,
   ):
     self.nj = nj
     self.S = state_slices(nj)
@@ -53,6 +70,22 @@ class GearYaw:
     self.negate_yaw_rate = bool(negate_yaw_rate)
     self.torque_law = str(torque_law)
     self.fall_z = float(fall_z)
+    self.clip_min, self.clip_max = float(clip_min), float(clip_max)
+    self.low_rate_boost = float(low_rate_boost)
+    self.negative_yaw_rate_penalty = float(negative_yaw_rate_penalty)
+    self.tumble_penalty_weight = float(tumble_penalty_weight)
+    self.tumble_dead_zone = float(tumble_dead_zone)
+    self.drift_position_threshold = float(drift_position_threshold)
+    self.drift_tilt_threshold = float(drift_tilt_threshold)
+    self.drift_outside_factor = float(drift_outside_factor)
+    self.drift_mode = str(drift_mode)
+    self.drift_decay_k_pos = float(drift_decay_k_pos)
+    self.drift_decay_k_tilt = float(drift_decay_k_tilt)
+    self.drift_min_factor = float(drift_min_factor)
+    self.drift_gate_positive_only = bool(drift_gate_positive_only)
+    self.max_abs_torque = max_abs_torque
+    self.normalize_torque = bool(normalize_torque)
+    self.max_abs_power = max_abs_power
     self.obs_dim = H_OBS * 2 * nj
     self.info_dim = nj + 3 + 2  # q_reset, anchor position (world), anchor roll / pitch
 
@@ -102,8 +135,17 @@ class GearYaw:
 
   def torque_work_rate(self, s2, cmd, plant):
     tau = self.servo_torque(s2, cmd, plant)
+    if self.max_abs_torque is not None:
+      tau = tau.clamp(-self.max_abs_torque, self.max_abs_torque)
     qd = s2[..., self.S["qd"]]
-    return W_TORQUE * tau.pow(2).sum(-1) + W_WORK * (tau * qd).sum(-1).pow(2)
+    torque_val = tau.pow(2).sum(-1)
+    if self.normalize_torque:
+      denom = self.nj * (self.max_abs_torque**2) if self.max_abs_torque else max(self.nj, 1)
+      torque_val = torque_val / denom
+    power = (tau * qd).sum(-1)
+    if self.max_abs_power is not None:
+      power = power.clamp(-self.max_abs_power, self.max_abs_power)
+    return W_TORQUE * torque_val + W_WORK * power.pow(2)
 
   def reward_rates(self, s, s2, info, dyaw_prev3, aux_rate):
     """Per-term reward rates (per second) of the step s -> s2; ``dyaw_prev3`` (B, 3) the previous three world-yaw
@@ -112,15 +154,46 @@ class GearYaw:
     d = self.dyaw(s, s2)
     win = torch.cat([dyaw_prev3, d[:, None]], -1)
     rate = (-win.mean(-1) if self.negate_yaw_rate else win.mean(-1)) / self.dt
+
+    if self.low_rate_boost != 1.0:
+      boosted = (rate * self.low_rate_boost).clamp(0.0, self.clip_max)
+      yaw_reward = torch.where(rate >= 0.0, boosted, rate.clamp(self.clip_min, 0.0))
+    else:
+      yaw_reward = rate.clamp(self.clip_min, self.clip_max)
+    if self.negative_yaw_rate_penalty != 1.0:
+      yaw_reward = torch.where(
+        yaw_reward < 0.0, yaw_reward * self.negative_yaw_rate_penalty, yaw_reward
+      )
+
+    if self.tumble_penalty_weight > 0.0:
+      w_world = quat_apply(self.world_quat(s2), s2[..., S["w"]])
+      z_axis = torch.zeros_like(w_world)
+      z_axis[..., 2] = 1.0
+      z_axis_w = quat_apply(self.world_quat(s2), z_axis)
+      spin = (w_world * z_axis_w).sum(-1, keepdim=True)
+      tumble = (w_world - spin * z_axis_w).norm(dim=-1) - self.tumble_dead_zone
+      yaw_reward = yaw_reward - self.tumble_penalty_weight * tumble.clamp_min(0.0)
+
     roll, pitch, _ = self.rpy(s2)
     pos_err = (self.world_pos(s2) - info[:, nj:nj + 3]).norm(dim=-1)
     tilt = torch.stack([wrap_to_pi(roll - info[:, nj + 3]).abs(), wrap_to_pi(pitch - info[:, nj + 4]).abs()], -1).norm(dim=-1)
-    inside = (pos_err <= DRIFT_POS) & (tilt <= DRIFT_TILT)
-    drift = torch.where(inside, torch.ones_like(rate), torch.full_like(rate, DRIFT_OUT))
+    if self.drift_mode == "step":
+      inside = (pos_err <= self.drift_position_threshold) & (tilt <= self.drift_tilt_threshold)
+      drift = torch.where(inside, torch.ones_like(rate), torch.full_like(rate, self.drift_outside_factor))
+    elif self.drift_mode == "exp":
+      pos_excess = (pos_err - self.drift_position_threshold).clamp_min(0.0)
+      tilt_excess = (tilt - self.drift_tilt_threshold).clamp_min(0.0)
+      drift = torch.exp(-self.drift_decay_k_pos * pos_excess - self.drift_decay_k_tilt * tilt_excess)
+      drift = drift.clamp(min=self.drift_min_factor, max=1.0)
+    else:
+      raise ValueError(f"Unknown drift_mode '{self.drift_mode}'")
+    if self.drift_gate_positive_only:
+      drift = torch.where(yaw_reward >= 0.0, drift, torch.ones_like(drift))
+
     v_w = quat_apply(self.base_q.expand(s2.shape[0], 4), s2[..., S["v"]])
     over = (s2[..., S["q"]] - info[:, :nj]).abs() - POSE_TOL
     terms = dict(
-      rotate_finite_diff=W_ROT * rate.clamp(-YAW_CLIP, YAW_CLIP) * drift,
+      rotate_finite_diff=W_ROT * yaw_reward * drift,
       object_linvel_penalty=W_LIN * v_w.abs().sum(-1),
       pose_diff_penalty=W_POSE * over.clamp_min(0).pow(2).sum(-1),
       torque_work=aux_rate,

@@ -45,6 +45,10 @@ MUJOCO_GL=egl uv run --frozen python scripts/train.py Mjlab-TJ-Right-HandCube-Ro
 MUJOCO_GL=egl uv run --frozen python scripts/wm/train_yaw.py \
   --task Mjlab-TJ-Right-HandCube-Rotate --out outputs/wm/tj --hours 2.5
 
+# world model with the state-only TJ reward tuning profile
+MUJOCO_GL=egl uv run --frozen python scripts/wm/train_yaw.py \
+  --task Mjlab-TJ-Right-HandCube-Rotate-Tuned --out outputs/wm/tj_tuned --hours 2.5
+
 # evaluate / render
 MUJOCO_GL=egl uv run --frozen python scripts/eval/eval_yaw.py \
   --policy <checkpoint.pt> --task Mjlab-TJ-Right-HandCube-Rotate --out outputs/eval/tj.json
@@ -69,10 +73,13 @@ MUJOCO_GL=egl uv run --frozen python scripts/play.py Mjlab-TJ-Right-HandCube-Rot
 On this machine the converted checkpoint scores ~0.34 rad/s yaw and 0.21
 reward/s with no drops in the TJ cube-yaw task.
 
-Note: this task uses the shared six-term hand-cube reward (the same one the
-world-model adapter reproduces).  The TJ branch's additional reward shaping
-(`cumulative_yaw`, `thumb_duty_cycle`, etc.) is not ported yet; the shared reward
-is the starting point for world-model training.
+Note: `Mjlab-TJ-Right-HandCube-Rotate` uses the shared six-term hand-cube reward
+(the same one the world-model adapter reproduces).  `-Tuned` adds the state-only
+part of the TJ branch's tuning (asymmetric negative-yaw penalty, `clip_max=1`,
+slow-rate boost, tumble penalty, exponential drift gate, normalized torque and
+clipped work).  The TJ branch's additional reward shaping (`cumulative_yaw`,
+`thumb_duty_cycle`) needs episode history / contact readings and is not ported
+yet.
 
 ## Results
 

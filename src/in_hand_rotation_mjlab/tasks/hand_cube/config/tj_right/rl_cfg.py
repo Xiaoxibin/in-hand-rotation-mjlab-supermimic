@@ -49,3 +49,12 @@ def tj_right_hand_cube_rotate_ppo_cfg() -> RslRlOnPolicyRunnerCfg:
 
 
 tj_right_hand_cube_rotate_rl_cfg = tj_right_hand_cube_rotate_ppo_cfg
+
+
+def tj_right_hand_cube_rotate_tuned_ppo_cfg() -> RslRlOnPolicyRunnerCfg:
+    cfg = tj_right_hand_cube_rotate_ppo_cfg()
+    cfg.experiment_name = "tj_right_hand_cube_rotate_tuned"
+    return cfg
+
+
+tj_right_hand_cube_rotate_tuned_rl_cfg = tj_right_hand_cube_rotate_tuned_ppo_cfg
