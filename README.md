@@ -45,6 +45,11 @@ MUJOCO_GL=egl uv run --frozen python scripts/train.py Mjlab-TJ-Right-HandCube-Ro
 MUJOCO_GL=egl uv run --frozen python scripts/train.py Mjlab-TJ-Right-HandCube-Reorient \
   --env.scene.num-envs 4096 --agent.run-name tj_so3
 
+# SO(3) evaluation without the LEAP-specific plant/geometry perturbations
+MUJOCO_GL=egl uv run --frozen python scripts/eval/eval_reorient_tj.py \
+  --task Mjlab-TJ-Right-HandCube-Reorient --ckpt <model.pt> \
+  --num-envs 512 --steps 1200 --out outputs/eval/tj_so3.json
+
 # world model (same trainer, TJ adapter selected by --task)
 MUJOCO_GL=egl uv run --frozen python scripts/wm/train_yaw.py \
   --task Mjlab-TJ-Right-HandCube-Rotate --out outputs/wm/tj --hours 2.5
