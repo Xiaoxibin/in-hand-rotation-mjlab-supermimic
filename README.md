@@ -41,6 +41,10 @@ uv run --frozen python scripts/list_envs.py --all | grep TJ
 MUJOCO_GL=egl uv run --frozen python scripts/train.py Mjlab-TJ-Right-HandCube-Rotate \
   --env.scene.num-envs 4096 --agent.run-name tj
 
+# SO(3) reorientation (6.2 cm cube from the 3.1 cm half-size cache; no TJ demos yet)
+MUJOCO_GL=egl uv run --frozen python scripts/train.py Mjlab-TJ-Right-HandCube-Reorient \
+  --env.scene.num-envs 4096 --agent.run-name tj_so3
+
 # world model (same trainer, TJ adapter selected by --task)
 MUJOCO_GL=egl uv run --frozen python scripts/wm/train_yaw.py \
   --task Mjlab-TJ-Right-HandCube-Rotate --out outputs/wm/tj --hours 2.5

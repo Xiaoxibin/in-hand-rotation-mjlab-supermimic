@@ -42,6 +42,7 @@ def test_env_cfgs_build(registry, task):
 @pytest.mark.parametrize("task", [
   "Mjlab-TJ-Right-HandCube-Rotate",
   "Mjlab-TJ-Right-HandCube-Rotate-Tuned",
+  "Mjlab-TJ-Right-HandCube-Reorient",
 ])
 def test_tj_task_builds(registry, task):
   assert task in registry.list_tasks()
@@ -49,7 +50,7 @@ def test_tj_task_builds(registry, task):
     cfg = registry.load_env_cfg(task, play=play)
     assert cfg.scene.num_envs > 0
     assert cfg.scene.entities["robot"].init_state.joint_pos
-  assert registry.load_rl_cfg(task).experiment_name.startswith("tj_right_hand_cube_rotate")
+  assert registry.load_rl_cfg(task).experiment_name.startswith("tj_right_hand_cube")
 
 
 def test_package_data():

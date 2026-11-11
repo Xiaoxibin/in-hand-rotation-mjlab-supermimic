@@ -16,7 +16,7 @@ import torch
 from mjlab.sensor import ContactMatch, ContactSensorCfg
 
 
-def add_safety_sensors(cfg) -> None:
+def add_safety_sensors(cfg, palm_pattern: str = "palm") -> None:
   cfg.scene.sensors = (cfg.scene.sensors or ()) + (
     ContactSensorCfg(
       name="safety_hand_cube",
@@ -27,7 +27,7 @@ def add_safety_sensors(cfg) -> None:
     ContactSensorCfg(
       name="safety_hand_self",
       primary=ContactMatch(mode="body", pattern=".*", entity="robot"),
-      secondary=ContactMatch(mode="subtree", pattern="palm", entity="robot"),
+      secondary=ContactMatch(mode="subtree", pattern=palm_pattern, entity="robot"),
       fields=("found", "force"), reduce="netforce", num_slots=1,
     ),
   )
