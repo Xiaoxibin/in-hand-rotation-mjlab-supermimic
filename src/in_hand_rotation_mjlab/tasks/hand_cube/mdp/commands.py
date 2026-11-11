@@ -445,6 +445,23 @@ class CubeGoalCommand(CommandTerm):
       self.metrics["successes"][hit] += 1
       self._resample(hit)
 
+  def _debug_vis_impl(self, visualizer: "DebugVisualizer") -> None:
+    """Draw the current target orientation as an RGB frame at the cube."""
+    indices = visualizer.get_env_indices(self.num_envs)
+    if not indices:
+      return
+    pos = self.cube.data.root_link_pos_w
+    goal_rot = matrix_from_quat(self.goal)
+    for i in indices:
+      visualizer.add_frame(
+        position=_viz_array(pos[i]),
+        rotation_matrix=_viz_array(goal_rot[i]),
+        scale=0.09,
+        label=f"goal_{i}",
+        axis_radius=0.004,
+        axis_colors=((1.0, 0.2, 0.2), (0.2, 1.0, 0.2), (0.2, 0.4, 1.0)),
+      )
+
 
 @dataclass(kw_only=True)
 class CubeGoalCommandCfg(CommandTermCfg):

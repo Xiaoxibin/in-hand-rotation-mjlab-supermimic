@@ -47,7 +47,7 @@ def tj_right_hand_cube_reorient_env_cfg(play: bool = False):
     cfg.commands = {
         GOAL: hand_cube_mdp.CubeGoalCommandCfg(
             resampling_time_range=(10.0, 10.0),
-            debug_vis=False,
+            debug_vis=True,
             init_max_angle=torch.pi if play else 0.8,
             reverse_curriculum=False,
         )
