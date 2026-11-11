@@ -321,10 +321,18 @@ def main():
         lt = F.binary_cross_entropy_with_logits(wm.term((wm._term_feat(p1) - wm.t_mu) / wm.t_sd).squeeze(-1),
                                                 (replay.done[rr, ee] == 1).float())
         la = (aux(task.aux_features(n1, cmd1, c1)).squeeze(-1) - replay.rew[rr, ee][:, 3:5].sum(-1) / aux_sd).pow(2).mean()
-        opt_wm.zero_grad(set_to_none=True)
-        (ld + lt + la).backward()
-        torch.nn.utils.clip_grad_norm_(list(wm.parameters()) + list(aux.parameters()), 1.0)
-        opt_wm.step()
+        loss_wm = ld + lt + la
+        params_wm = list(wm.parameters()) + list(aux.parameters())
+        if torch.isfinite(loss_wm):
+          opt_wm.zero_grad(set_to_none=True)
+          loss_wm.backward()
+          if all(torch.isfinite(p.grad).all() for p in params_wm if p.grad is not None):
+            torch.nn.utils.clip_grad_norm_(params_wm, 1.0)
+            opt_wm.step()
+          else:
+            opt_wm.zero_grad(set_to_none=True)
+        else:
+          opt_wm.zero_grad(set_to_none=True)
       st.update(wm=float(ld), term=float(lt), aux=float(la), wm_twist_deg=acc_tw, wm_pos_mm=acc_pos)
       if n_up <= args.wm_only:
         hist.append(st)
