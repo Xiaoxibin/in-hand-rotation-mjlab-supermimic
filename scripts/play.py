@@ -184,12 +184,24 @@ def run_play(task_id: str, cfg: PlayConfig):
     else:
       raise RuntimeError(f"Unsupported dummy agent type: {cfg.agent}")
   else:
-    runner_cls = load_runner_cls(task_id) or OnPolicyRunner
-    runner = runner_cls(env, _prepare_agent_cfg(agent_cfg), device=device)
-    # the run recorded its training cfg, so compare against the task's training plant
-    check_checkpoint_plant(resume_path, load_env_cfg(task_id), task=task_id)
-    runner.load(str(resume_path), map_location=device)
-    policy = runner.get_inference_policy(device=device)
+    ck = torch.load(resume_path, map_location=device, weights_only=False)
+    if isinstance(ck, dict) and ck.get("kind") == "wm_actor":
+      if "Reorient" in task_id or "Fingertip" in task_id:
+        raise ValueError(
+          "play.py can load world-model actors only for cube-yaw tasks; "
+          "use eval_ftrot.py / render_ftrot.py for fingertip and eval_reorient.py for SO(3)."
+        )
+      from in_hand_rotation_mjlab.world_model.policy import Actor
+
+      actor = Actor.from_checkpoint(ck).to(device).eval()
+      policy = lambda obs: actor(obs["actor"] if not torch.is_tensor(obs) else obs)  # noqa: E731
+    else:
+      runner_cls = load_runner_cls(task_id) or OnPolicyRunner
+      runner = runner_cls(env, _prepare_agent_cfg(agent_cfg), device=device)
+      # the run recorded its training cfg, so compare against the task's training plant
+      check_checkpoint_plant(resume_path, load_env_cfg(task_id), task=task_id)
+      runner.load(str(resume_path), map_location=device)
+      policy = runner.get_inference_policy(device=device)
 
   # Handle "auto" viewer selection.
   if cfg.viewer == "auto":

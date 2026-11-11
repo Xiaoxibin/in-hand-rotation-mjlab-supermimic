@@ -58,6 +58,10 @@ MUJOCO_GL=egl uv run --frozen python scripts/eval/eval_yaw.py \
   --policy <checkpoint.pt> --task Mjlab-TJ-Right-HandCube-Rotate --out outputs/eval/tj.json
 MUJOCO_GL=egl uv run --frozen python scripts/render/render_yaw.py \
   --policy <checkpoint.pt> --task Mjlab-TJ-Right-HandCube-Rotate --out outputs/render/tj
+
+# yaw world-model actors can also be opened live (native/viser) or recorded with play.py
+MUJOCO_GL=glfw uv run --frozen python scripts/play.py Mjlab-TJ-Right-HandCube-Rotate \
+  --checkpoint-file <wm_actor.pt> --num-envs 1 --viewer native
 ```
 
 The TJ project's already-trained PPO checkpoint
