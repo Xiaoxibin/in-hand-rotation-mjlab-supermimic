@@ -630,6 +630,9 @@ def make_hand_cube_embodiment_env_cfg(
         cfg.observations["critic"].terms[term_name].params["palm_center_geom_expr"] = palm_center_geom_expr
     cfg.commands["frame_viz"].palm_body_name = palm_body_name
     cfg.commands["frame_viz"].palm_center_geom_expr = palm_center_geom_expr
+    # Match the TJ branch's debug_obs_compare.py: never run the frame visualizer
+    # in normal playback.  (Its show_* flags are also all False by default.)
+    cfg.commands["frame_viz"].debug_vis = False
 
     # Set embodiment-specific yaw reward sign
     cfg.rewards["rotate_finite_diff"].params["negate_yaw_rate"] = negate_yaw_rate
