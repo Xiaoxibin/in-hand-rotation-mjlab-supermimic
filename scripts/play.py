@@ -46,8 +46,10 @@ class CleanNativeViewer(NativeMujocoViewer):
     super().setup()
     if self.viewer is None:
       return
-    for name in ("mjVIS_JOINT", "mjVIS_SCLINERTIA", "mjVIS_INERTIA", "mjVIS_COM"):
-      self.viewer.opt.flags[getattr(mujoco.mjtVisFlag, name)] = 0
+    flags = self.viewer.opt.flags
+    for name, flag in mujoco.mjtVisFlag.__members__.items():
+      if int(flag) < len(flags):
+        flags[flag] = 1 if name == "mjVIS_TRANSPARENT" else 0
 
 
 class GoalCounterNativeViewer(CleanNativeViewer):
