@@ -39,6 +39,7 @@ def tj_right_hand_cube_rotate_env_cfg(
     play: bool = False,
     cube_half_size: float = CUBE_HALF_SIZE,
     grasp_cache_file: str = GRASP_CACHE_FILE,
+    cube_letters: bool = False,
 ) -> ManagerBasedRlEnvCfg:
     cfg = make_hand_cube_embodiment_env_cfg(
         robot_cfg_fn=get_tj_right_hand_cfg,
@@ -46,6 +47,7 @@ def tj_right_hand_cube_rotate_env_cfg(
         cube_spawn_pos=CUBE_SPAWN_POS,
         grasp_cache_file=grasp_cache_file,
         cube_half_size=cube_half_size,
+        cube_letters=cube_letters,
         negate_yaw_rate=False,  # right hand: counter-clockwise is positive
         play=play,
         palm_body_name="Palm_R",

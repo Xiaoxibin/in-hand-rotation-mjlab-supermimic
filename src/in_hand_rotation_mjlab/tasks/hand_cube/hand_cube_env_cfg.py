@@ -523,6 +523,63 @@ def measured_gear_plant(cfg, dr=None):
   return cfg
 
 
+def _add_letter_cube_faces(spec, body, cube_size: float) -> None:
+    """Add six textured, collision-free face plates with U/D/F/B/L/R letters."""
+    from pathlib import Path
+
+    import mujoco
+    from PIL import Image, ImageDraw, ImageFont
+
+    font_path = Path("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf")
+    try:
+        font = ImageFont.truetype(str(font_path), 190) if font_path.exists() else ImageFont.load_default()
+    except Exception:
+        font = ImageFont.load_default()
+
+    half = float(cube_size)
+    eps = max(half * 0.006, 2e-4)
+    # letter, background RGB, face center, face half-size
+    faces = (
+        ("U", (245, 245, 245), (0.0, 0.0, half + eps), (half, half, eps)),
+        ("D", (250, 210, 60), (0.0, 0.0, -half - eps), (half, half, eps)),
+        ("F", (70, 140, 240), (0.0, -half - eps, 0.0), (half, eps, half)),
+        ("B", (245, 135, 50), (0.0, half + eps, 0.0), (half, eps, half)),
+        ("L", (90, 190, 90), (-half - eps, 0.0, 0.0), (eps, half, half)),
+        ("R", (220, 70, 70), (half + eps, 0.0, 0.0), (eps, half, half)),
+    )
+    for letter, bg, pos, size in faces:
+        img = Image.new("RGB", (256, 256), bg)
+        draw = ImageDraw.Draw(img)
+        bbox = draw.textbbox((0, 0), letter, font=font)
+        w, h = bbox[2] - bbox[0], bbox[3] - bbox[1]
+        draw.text(((256 - w) / 2 - bbox[0], (256 - h) / 2 - bbox[1]), letter, fill=(20, 20, 20), font=font)
+        tex = spec.add_texture(
+            name=f"cube_face_{letter}",
+            type=mujoco.mjtTexture.mjTEXTURE_2D,
+            width=256,
+            height=256,
+            nchannel=3,
+        )
+        tex.data = img.tobytes()
+        mat = spec.add_material(name=f"cube_face_{letter}_mat")
+        mat.textures = [""] + [tex.name] + [""] * 8  # slot 1 = mjTEXROLE_RGB
+        mat.rgba = (1.0, 1.0, 1.0, 1.0)
+        mat.texrepeat = (1, 1)
+        mat.texuniform = False
+        body.add_geom(
+            name=f"cube_face_{letter}",
+            type=mujoco.mjtGeom.mjGEOM_BOX,
+            size=size,
+            pos=pos,
+            material=mat.name,
+            contype=0,
+            conaffinity=0,
+            mass=0.0,
+            density=0.0,
+            rgba=(1.0, 1.0, 1.0, 1.0),
+        )
+
+
 def make_hand_cube_embodiment_env_cfg(
     *,
     robot_cfg_fn,
@@ -536,6 +593,7 @@ def make_hand_cube_embodiment_env_cfg(
     fingertip_geom_expr: str = ".*_tip",
     cube_half_size: float | None = None,
     cube_mass: float = 0.1,
+    cube_letters: bool = False,
     use_grasp_cache: bool = True,
     enable_domain_randomization: bool = True,
     sim2real: Sim2RealCfg | None = None,
@@ -552,6 +610,8 @@ def make_hand_cube_embodiment_env_cfg(
         play: Whether this is for deployment (nominal cube size, no observation noise or
             curriculum, infinite episodes; domain randomization stays on,
             ``enable_domain_randomization=False`` removes it)
+        cube_letters: If True, add six textured visual face plates with U/D/F/B/L/R letters
+            (collision-free; useful for seeing the cube's orientation in SO(3) playback).
         sim2real: plant randomization / shaping recipe applied last (``Sim2RealCfg``)
         max_command_lead: the |command - measured| clamp [rad] (the real LEAP driver's)
     """
@@ -578,6 +638,8 @@ def make_hand_cube_embodiment_env_cfg(
             mass=mass,
             rgba=(0.85, 0.3, 0.15, 1.0),
         )
+        if cube_letters:
+            _add_letter_cube_faces(spec, body, cube_size)
         return spec
     
     cfg = make_hand_cube_inhand_rotate_env_cfg()

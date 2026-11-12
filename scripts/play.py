@@ -28,6 +28,37 @@ from mjlab.utils.wrappers import VideoRecorder
 from mjlab.viewer import NativeMujocoViewer, ViserPlayViewer
 
 
+class GoalCounterNativeViewer(NativeMujocoViewer):
+  """Native viewer with a cumulative "Goals reached" line for SO(3) tasks."""
+
+  def _set_status_overlay(self, viewer) -> None:
+    status = self.get_status()
+    capped = " [CAPPED]" if status.capped else ""
+    try:
+      cmd = self.env.unwrapped.command_manager.get_term("goal")
+      goals = int(getattr(cmd, "_total_successes", 0))
+    except Exception:
+      goals = 0
+    text_1 = "Env\nStep\nStatus\nSpeed\nTarget RT\nActual RT\nGoals"
+    text_2 = (
+      f"{self.env_idx + 1}/{self.env.num_envs}\n"
+      f"{status.step_count}\n"
+      f"{'PAUSED' if status.paused else 'RUNNING'}{capped}\n"
+      f"{status.speed_label}\n"
+      f"{status.target_realtime:.2f}x\n"
+      f"{status.actual_realtime:.2f}x ({status.smoothed_fps:.0f} FPS)\n"
+      f"{goals}"
+    )
+    viewer.set_texts(
+      (
+        mujoco.mjtFontScale.mjFONTSCALE_150.value,
+        mujoco.mjtGridPos.mjGRID_TOPLEFT.value,
+        text_1,
+        text_2,
+      )
+    )
+
+
 @dataclass(frozen=True)
 class PlayConfig:
   agent: Literal["zero", "random", "trained"] = "trained"
@@ -218,7 +249,8 @@ def run_play(task_id: str, cfg: PlayConfig):
         obs, _, _, _ = env.step(policy(obs))
     print(f"[INFO]: Ran {cfg.video_length} steps without a viewer" + (f"; video in {log_dir / 'videos' / 'play'}" if cfg.video and log_dir else ""))
   elif resolved_viewer == "native":
-    NativeMujocoViewer(env, policy).run()
+    viewer_cls = GoalCounterNativeViewer if "Reorient" in task_id else NativeMujocoViewer
+    viewer_cls(env, policy).run()
   elif resolved_viewer == "viser":
     TaskCenteredViserPlayViewer(env, policy).run()
   else:

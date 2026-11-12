@@ -332,6 +332,7 @@ class CubeGoalCommand(CommandTerm):
     self.metrics["rot_dist"] = torch.zeros(self.num_envs, device=self.device)
     self.metrics["successes"] = torch.zeros(self.num_envs, device=self.device)
     self.metrics["max_goal_angle"] = torch.zeros(self.num_envs, device=self.device)
+    self._total_successes: int = 0
     # goal-distance curriculum: goals are the current orientation rotated by an angle in
     # [min_goal_angle, max_angle]; max_angle grows while the success rate is high (pi = uniform SO(3))
     self.max_angle = cfg.init_max_angle
@@ -443,23 +444,46 @@ class CubeGoalCommand(CommandTerm):
       self._attempts = self._hits = 0.0
     if len(hit):
       self.metrics["successes"][hit] += 1
+      self._total_successes += int(len(hit))
       self._resample(hit)
 
   def _debug_vis_impl(self, visualizer: "DebugVisualizer") -> None:
-    """Draw the current target orientation as an RGB frame at the cube."""
+    """Draw the target orientation as a translucent ghost cube and an RGB frame."""
+    import mujoco
+    import numpy as np
+
     indices = visualizer.get_env_indices(self.num_envs)
     if not indices:
       return
     pos = self.cube.data.root_link_pos_w
     goal_rot = matrix_from_quat(self.goal)
+    gid = mujoco.mj_name2id(self._env.sim.mj_model, mujoco.mjtObj.mjOBJ_GEOM, "cube/cube_geom")
+    half = float(self._env.sim.model.geom_size[:, gid, 0].mean()) if gid >= 0 else 0.031
     for i in indices:
+      offset = torch.tensor([0.0, 0.0, 2.0 * half + 0.05], device=pos.device, dtype=pos.dtype)
+      ghost = pos[i] + offset
+      visualizer.add_box(
+        _viz_array(ghost),
+        np.array([half, half, half], dtype=np.float32),
+        _viz_array(goal_rot[i]),
+        (1.0, 0.55, 0.1, 0.35),
+        label=f"goal cube {i}",
+      )
       visualizer.add_frame(
-        position=_viz_array(pos[i]),
-        rotation_matrix=_viz_array(goal_rot[i]),
-        scale=0.09,
-        label=f"goal_{i}",
-        axis_radius=0.004,
+        _viz_array(ghost),
+        _viz_array(goal_rot[i]),
+        scale=half * 2.4,
+        label=f"goal {i}",
+        axis_radius=0.003,
         axis_colors=((1.0, 0.2, 0.2), (0.2, 1.0, 0.2), (0.2, 0.4, 1.0)),
+      )
+      counter = pos[i] + torch.tensor([0.0, 0.0, 4.0 * half + 0.09], device=pos.device, dtype=pos.dtype)
+      visualizer.add_box(
+        _viz_array(counter),
+        np.array([0.006, 0.006, 0.006], dtype=np.float32),
+        np.eye(3, dtype=np.float32),
+        (0.1, 0.1, 0.1, 0.6),
+        label=f"Goals reached: {self._total_successes}",
       )
 
 

@@ -35,6 +35,7 @@ def tj_right_hand_cube_reorient_env_cfg(play: bool = False):
         play=play,
         cube_half_size=CUBE_HALF_SIZE,
         grasp_cache_file=GRASP_CACHE_FILE,
+        cube_letters=True,
     )
     add_safety_sensors(cfg, palm_pattern="Palm_R")
 
