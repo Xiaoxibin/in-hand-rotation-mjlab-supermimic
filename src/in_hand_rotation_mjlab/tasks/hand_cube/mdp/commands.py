@@ -27,7 +27,7 @@ def _viz_array(value: torch.Tensor):
 
 # Solid face colors shared by the real cube and the translucent goal cube.
 CUBE_FACE_COLORS = {
-  "U": (0.95, 0.95, 0.95),
+  "U": (0.55, 0.20, 0.90),
   "D": (0.95, 0.85, 0.10),
   "F": (0.10, 0.55, 0.95),
   "B": (0.95, 0.45, 0.05),
@@ -282,11 +282,11 @@ class HandCubeFrameVizCommandCfg(CommandTermCfg):
     origin_sphere_radius: float = 0.006
 
     show_world_frame: bool = False
-    show_palm_body_frame: bool = True
-    show_palm_center_frame: bool = True
-    show_cube_frame: bool = True
-    show_palm_to_cube_arrow: bool = True
-    show_frame_origins: bool = True
+    show_palm_body_frame: bool = False
+    show_palm_center_frame: bool = False
+    show_cube_frame: bool = False
+    show_palm_to_cube_arrow: bool = False
+    show_frame_origins: bool = False
 
     world_axis_colors: tuple[
       tuple[float, float, float],
