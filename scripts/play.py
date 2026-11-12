@@ -28,7 +28,18 @@ from mjlab.utils.wrappers import VideoRecorder
 from mjlab.viewer import NativeMujocoViewer, ViserPlayViewer
 
 
-class GoalCounterNativeViewer(NativeMujocoViewer):
+class CleanNativeViewer(NativeMujocoViewer):
+  """Native viewer with MuJoCo's joint/inertia/COM debug frames disabled."""
+
+  def setup(self) -> None:
+    super().setup()
+    if self.viewer is None:
+      return
+    for name in ("mjVIS_JOINT", "mjVIS_SCLINERTIA", "mjVIS_INERTIA", "mjVIS_COM"):
+      self.viewer.opt.flags[getattr(mujoco.mjtVisFlag, name)] = 0
+
+
+class GoalCounterNativeViewer(CleanNativeViewer):
   """Native viewer with a cumulative "Goals reached" line for SO(3) tasks."""
 
   def _set_status_overlay(self, viewer) -> None:
@@ -249,7 +260,7 @@ def run_play(task_id: str, cfg: PlayConfig):
         obs, _, _, _ = env.step(policy(obs))
     print(f"[INFO]: Ran {cfg.video_length} steps without a viewer" + (f"; video in {log_dir / 'videos' / 'play'}" if cfg.video and log_dir else ""))
   elif resolved_viewer == "native":
-    viewer_cls = GoalCounterNativeViewer if "Reorient" in task_id else NativeMujocoViewer
+    viewer_cls = GoalCounterNativeViewer if "Reorient" in task_id else CleanNativeViewer
     viewer_cls(env, policy).run()
   elif resolved_viewer == "viser":
     TaskCenteredViserPlayViewer(env, policy).run()

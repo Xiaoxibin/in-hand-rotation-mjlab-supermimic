@@ -490,7 +490,7 @@ class CubeGoalCommand(CommandTerm):
           _viz_array(center),
           np.array(size, dtype=np.float32),
           _viz_array(R),
-          (*CUBE_FACE_COLORS[name], 0.15),
+          (*CUBE_FACE_COLORS[name], 0.25),
         )
 
 
