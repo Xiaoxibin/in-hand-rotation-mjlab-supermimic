@@ -42,7 +42,8 @@ MUJOCO_GL=egl uv run --frozen python scripts/train.py Mjlab-TJ-Right-HandCube-Ro
   --env.scene.num-envs 4096 --agent.run-name tj
 
 # SO(3) reorientation (6.2 cm cube from the 3.1 cm half-size cache; no TJ demos yet)
-# Cube faces: U/D/F/B/L/R letters; viewer: translucent goal cube + RGB goal frame + goals counter.
+# Cube faces use six different colors (no letters); the native/viser viewer draws a
+# translucent target cube with the same face colors plus a cumulative "Goals reached" counter.
 MUJOCO_GL=egl uv run --frozen python scripts/train.py Mjlab-TJ-Right-HandCube-Reorient \
   --env.scene.num-envs 4096 --agent.run-name tj_so3
 

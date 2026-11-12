@@ -448,7 +448,7 @@ class CubeGoalCommand(CommandTerm):
       self._resample(hit)
 
   def _debug_vis_impl(self, visualizer: "DebugVisualizer") -> None:
-    """Draw the target orientation as a translucent ghost cube and an RGB frame."""
+    """Draw the target orientation as a translucent six-color ghost cube."""
     import mujoco
     import numpy as np
 
@@ -459,24 +459,28 @@ class CubeGoalCommand(CommandTerm):
     goal_rot = matrix_from_quat(self.goal)
     gid = mujoco.mj_name2id(self._env.sim.mj_model, mujoco.mjtObj.mjOBJ_GEOM, "cube/cube_geom")
     half = float(self._env.sim.model.geom_size[:, gid, 0].mean()) if gid >= 0 else 0.031
+    eps = max(half * 0.006, 2e-4)
+    faces = (
+      ((0.96, 0.96, 0.96), (0.0, 0.0, half + eps), (half, half, eps)),
+      ((0.98, 0.82, 0.24), (0.0, 0.0, -half - eps), (half, half, eps)),
+      ((0.27, 0.55, 0.94), (0.0, -half - eps, 0.0), (half, eps, half)),
+      ((0.96, 0.53, 0.20), (0.0, half + eps, 0.0), (half, eps, half)),
+      ((0.35, 0.75, 0.35), (-half - eps, 0.0, 0.0), (eps, half, half)),
+      ((0.86, 0.27, 0.27), (half + eps, 0.0, 0.0), (eps, half, half)),
+    )
     for i in indices:
       offset = torch.tensor([0.0, 0.0, 2.0 * half + 0.05], device=pos.device, dtype=pos.dtype)
       ghost = pos[i] + offset
-      visualizer.add_box(
-        _viz_array(ghost),
-        np.array([half, half, half], dtype=np.float32),
-        _viz_array(goal_rot[i]),
-        (1.0, 0.55, 0.1, 0.35),
-        label=f"goal cube {i}",
-      )
-      visualizer.add_frame(
-        _viz_array(ghost),
-        _viz_array(goal_rot[i]),
-        scale=half * 2.4,
-        label=f"goal {i}",
-        axis_radius=0.003,
-        axis_colors=((1.0, 0.2, 0.2), (0.2, 1.0, 0.2), (0.2, 0.4, 1.0)),
-      )
+      R = goal_rot[i]
+      for rgb, local_center, size in faces:
+        c = torch.tensor(local_center, device=pos.device, dtype=pos.dtype)
+        center = ghost + R @ c
+        visualizer.add_box(
+          _viz_array(center),
+          np.array(size, dtype=np.float32),
+          _viz_array(R),
+          (*rgb, 0.18),
+        )
       counter = pos[i] + torch.tensor([0.0, 0.0, 4.0 * half + 0.09], device=pos.device, dtype=pos.dtype)
       visualizer.add_box(
         _viz_array(counter),
