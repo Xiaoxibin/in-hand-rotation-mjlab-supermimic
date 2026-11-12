@@ -29,9 +29,20 @@ from mjlab.viewer import NativeMujocoViewer, ViserPlayViewer
 
 
 class CleanNativeViewer(NativeMujocoViewer):
-  """Native viewer with MuJoCo's joint/inertia/COM debug frames disabled."""
+  """Native viewer with MuJoCo's joint/inertia/COM/mocap debug frames disabled."""
 
   def setup(self) -> None:
+    sim = self.env.unwrapped.sim
+    # MuJoCo's native viewer draws mocap bodies as large RGB frames.  With one
+    # environment the robot base is at the world origin, so make the viewer's
+    # copy of the mocap base a fixed body; this hides the frame without moving
+    # the hand.  Multi-env viewer playback keeps the mocap frames.
+    if self.env.unwrapped.num_envs == 1:
+      mjm = sim.mj_model
+      for body_id in range(mjm.nbody):
+        if mjm.body_mocapid[body_id] >= 0:
+          mjm.body_mocapid[body_id] = -1
+
     super().setup()
     if self.viewer is None:
       return
