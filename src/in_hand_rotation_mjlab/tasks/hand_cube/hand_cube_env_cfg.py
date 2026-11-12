@@ -527,18 +527,21 @@ def _add_colored_cube_faces(spec, body, cube_size: float) -> None:
     """Add six solid-color, collision-free face plates (one color per face)."""
     import mujoco
 
+    from in_hand_rotation_mjlab.tasks.hand_cube.mdp.commands import CUBE_FACE_COLORS
+
     half = float(cube_size)
     eps = max(half * 0.006, 2e-4)
-    # face name, RGBA color, face center, face half-size
+    # face name, face center, face half-size
     faces = (
-        ("U", (0.96, 0.96, 0.96, 1.0), (0.0, 0.0, half + eps), (half, half, eps)),
-        ("D", (0.98, 0.82, 0.24, 1.0), (0.0, 0.0, -half - eps), (half, half, eps)),
-        ("F", (0.27, 0.55, 0.94, 1.0), (0.0, -half - eps, 0.0), (half, eps, half)),
-        ("B", (0.96, 0.53, 0.20, 1.0), (0.0, half + eps, 0.0), (half, eps, half)),
-        ("L", (0.35, 0.75, 0.35, 1.0), (-half - eps, 0.0, 0.0), (eps, half, half)),
-        ("R", (0.86, 0.27, 0.27, 1.0), (half + eps, 0.0, 0.0), (eps, half, half)),
+        ("U", (0.0, 0.0, half + eps), (half, half, eps)),
+        ("D", (0.0, 0.0, -half - eps), (half, half, eps)),
+        ("F", (0.0, -half - eps, 0.0), (half, eps, half)),
+        ("B", (0.0, half + eps, 0.0), (half, eps, half)),
+        ("L", (-half - eps, 0.0, 0.0), (eps, half, half)),
+        ("R", (half + eps, 0.0, 0.0), (eps, half, half)),
     )
-    for name, color, pos, size in faces:
+    for name, pos, size in faces:
+        color = (*CUBE_FACE_COLORS[name], 1.0)
         mat = spec.add_material(name=f"cube_face_{name}_mat")
         mat.rgba = color
         body.add_geom(

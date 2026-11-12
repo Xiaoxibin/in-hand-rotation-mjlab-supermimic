@@ -25,6 +25,17 @@ def _viz_array(value: torch.Tensor):
   return value.detach().cpu().numpy()
 
 
+# Solid face colors shared by the real cube and the translucent goal cube.
+CUBE_FACE_COLORS = {
+  "U": (0.95, 0.95, 0.95),
+  "D": (0.95, 0.85, 0.10),
+  "F": (0.10, 0.55, 0.95),
+  "B": (0.95, 0.45, 0.05),
+  "L": (0.10, 0.80, 0.20),
+  "R": (0.95, 0.10, 0.15),
+}
+
+
 class InHandYawCommand(CommandTerm):
   cfg: InHandYawCommandCfg
 
@@ -270,7 +281,7 @@ class HandCubeFrameVizCommandCfg(CommandTermCfg):
     cube_frame_scale: float = 0.06
     origin_sphere_radius: float = 0.006
 
-    show_world_frame: bool = True
+    show_world_frame: bool = False
     show_palm_body_frame: bool = True
     show_palm_center_frame: bool = True
     show_cube_frame: bool = True
@@ -461,34 +472,26 @@ class CubeGoalCommand(CommandTerm):
     half = float(self._env.sim.model.geom_size[:, gid, 0].mean()) if gid >= 0 else 0.031
     eps = max(half * 0.006, 2e-4)
     faces = (
-      ((0.96, 0.96, 0.96), (0.0, 0.0, half + eps), (half, half, eps)),
-      ((0.98, 0.82, 0.24), (0.0, 0.0, -half - eps), (half, half, eps)),
-      ((0.27, 0.55, 0.94), (0.0, -half - eps, 0.0), (half, eps, half)),
-      ((0.96, 0.53, 0.20), (0.0, half + eps, 0.0), (half, eps, half)),
-      ((0.35, 0.75, 0.35), (-half - eps, 0.0, 0.0), (eps, half, half)),
-      ((0.86, 0.27, 0.27), (half + eps, 0.0, 0.0), (eps, half, half)),
+      ("U", (0.0, 0.0, half + eps), (half, half, eps)),
+      ("D", (0.0, 0.0, -half - eps), (half, half, eps)),
+      ("F", (0.0, -half - eps, 0.0), (half, eps, half)),
+      ("B", (0.0, half + eps, 0.0), (half, eps, half)),
+      ("L", (-half - eps, 0.0, 0.0), (eps, half, half)),
+      ("R", (half + eps, 0.0, 0.0), (eps, half, half)),
     )
     for i in indices:
-      offset = torch.tensor([0.0, 0.0, 2.0 * half + 0.05], device=pos.device, dtype=pos.dtype)
+      offset = torch.tensor([0.0, 0.0, 1.6 * half + 0.03], device=pos.device, dtype=pos.dtype)
       ghost = pos[i] + offset
       R = goal_rot[i]
-      for rgb, local_center, size in faces:
+      for name, local_center, size in faces:
         c = torch.tensor(local_center, device=pos.device, dtype=pos.dtype)
         center = ghost + R @ c
         visualizer.add_box(
           _viz_array(center),
           np.array(size, dtype=np.float32),
           _viz_array(R),
-          (*rgb, 0.18),
+          (*CUBE_FACE_COLORS[name], 0.15),
         )
-      counter = pos[i] + torch.tensor([0.0, 0.0, 4.0 * half + 0.09], device=pos.device, dtype=pos.dtype)
-      visualizer.add_box(
-        _viz_array(counter),
-        np.array([0.006, 0.006, 0.006], dtype=np.float32),
-        np.eye(3, dtype=np.float32),
-        (0.1, 0.1, 0.1, 0.6),
-        label=f"Goals reached: {self._total_successes}",
-      )
 
 
 @dataclass(kw_only=True)
